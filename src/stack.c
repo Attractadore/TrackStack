@@ -1,138 +1,115 @@
-#include "stack.h"
+// TODO:
+// 4) Decide what to do if stack_verify fails
+// 5) Add more errors codes and set error codes after successful operations
 
-#include <assert.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
+#include "stack_error.c"
 
 enum { STACK_DEFAULT_CAPACITY = 10 };
 
-typedef unsigned long long canary_type;
-
-struct stack_t {
-    canary_type canary;
-    void* data;
-    size_t elem_sz;
-    size_t size;
-    size_t capacity;
-    STACK_ERROR error;
-};
-
-canary_type stack_hash(Stack* stk) {
-    assert(stk);
-    return (canary_type) stk->data ^
-           (canary_type) stk->elem_sz ^
-           (canary_type) stk->size ^
-           (canary_type) stk->capacity ^
-           (canary_type) stk->error;
-}
-
-void stack_update_canary(Stack* stk) {
+#ifdef USE_POISON
+void stack_write_poison(Stack* stk, size_t first_elem, size_t num_elem) {
     assert(stk);
 
-    stk->canary = stack_hash(stk);
+    STACK_VERIFY(stk);
+    assert(first_elem >= stk->size);
+    assert(first_elem + num_elem <= stk->capacity);
+
+    size_t start_i = first_elem * stk->elem_sz;
+    size_t end_i = (first_elem + num_elem) * stk->elem_sz;
+    write_poison((char*) stk->data + start_i, start_i, end_i - start_i);  
 }
-
-void stack_dump_elem(FILE* file, void const* elem_p, size_t sz) {
-    assert(file);
-    assert(elem_p);
-    assert(sz);
-
-    fprintf(file, "0x");
-    for (size_t i = 0; i < sz; i++) {
-        fprintf(file, "%X", ((unsigned char const*) elem_p)[i]);
-    }
-    fprintf(file, "\n");
-}
-
-void stack_dump(Stack* stk, int line, char const* func_name, char const* file_name) {
-    assert(stk);
-
-    static FILE* log_file = NULL;
-    if (!log_file) {
-        log_file = fopen("stack_log", "ab");
-        setvbuf(log_file, NULL, _IONBF, 0);
-        if (!log_file) {
-            return;
-        }
-    }
-
-    time_t tm = time(NULL);
-    fprintf(log_file, "%s\n", ctime(&tm));
-    fprintf(log_file, "stack dump called from line %d from %s from file %s\n", line, func_name, file_name);
-    fprintf(log_file, "stack status is: \"%s\"\n", stack_error_string(stk->error));
-    fprintf(log_file, "stack address is: %p\n", (void*) stk);
-    fprintf(log_file, "stack element size is %lu; stack size is %lu; stack capacity is %lu\n", stk->elem_sz, stk->size, stk->capacity);
-    fprintf(log_file, "stack data address is: %p\n", stk->data);
-    fprintf(log_file, "stack data is:\n");
-    for (size_t i = 0; i < stk->capacity; i++) {
-        if (i < stk->size) {
-            fprintf(log_file, "[%lu]: ", i);
-        } else {
-            fprintf(log_file, "(%lu): ", i);
-        }
-        stack_dump_elem(log_file, (char const*) stk->data + i * stk->elem_sz, stk->elem_sz);
-    }
-    fprintf(log_file, "\n");
-}
-
-void stack_verify(Stack* stk, int line, char const* func_name, char const* file_name) {
-    assert(stk);
-
-    if (stk->size > stk->capacity) {
-        stk->error = STACK_CORRUPTION_ERROR;
-    }
-
-    if (!stk->elem_sz) {
-        stk->error = STACK_CORRUPTION_ERROR;
-    }
-
-    if (stk->error != STACK_OK && stk->error != STACK_ALLOCATION_ERROR && stk->error != STACK_CORRUPTION_ERROR) {
-        stk->error = STACK_CORRUPTION_ERROR;
-    }
-
-    if (stk->canary != stack_hash(stk)) {
-        stk->error = STACK_CORRUPTION_ERROR;
-    }
-
-    stack_dump(stk, line, func_name, file_name);
-
-    if (stk->error == STACK_CORRUPTION_ERROR) {
-        abort();
-    }
-}
-
-#ifndef NDEBUG
-#define stack_verify(stk) stack_verify(stk, __LINE__, __func__, __FILE__)
+#define WRITE_POISON(stk, first_elem, num_elem) stack_write_poison(stk, first_elem, num_elem)
 #else
-#define stack_verify(stk)
+#define WRITE_POISON(stk, first_elem, num_elem)
+#endif
+
+#ifdef USE_HASH
+void stack_update_hash(Stack* stk) {
+    assert(stk);
+
+    STACK_VERIFY(stk);
+
+    stk->metadata_hash = stack_metadata_hash(stk);
+#ifdef USE_HASH_FULL
+    stk->data_hash = stack_data_hash(stk);
+#endif
+}
+
+void stack_update_metadata_hash(Stack* stk) {
+    assert(stk);
+
+    STACK_VERIFY(stk);
+
+    stk->metadata_hash = stack_metadata_hash(stk);
+}
+
+#ifdef USE_HASH_FULL
+void stack_update_data_hash(Stack* stk) {
+    assert(stk);
+
+    STACK_VERIFY(stk);
+
+    stk->data_hash = stack_data_hash(stk);
+}
+#endif
+#define STACK_REHASH_METADATA(stk) stack_update_metadata_hash(stk)
+#define STACK_REHASH(stk) stack_update_hash(stk)
+#else
+#define STACK_REHASH_METADATA(stk)
+#define STACK_REHASH(stk)
 #endif
 
 void stack_resize(Stack* stk, size_t new_capacity) {
     assert(stk);
-    assert(new_capacity >= stk->size);
+    assert(new_capacity && new_capacity >= stk->size);
 
-    stack_verify(stk);
+    STACK_VERIFY(stk);
 
-    void* new_data = NULL;
-    while (new_capacity > stk->capacity && !(new_data = realloc(stk->data, new_capacity * stk->elem_sz))) {
-        new_capacity = (stk->capacity + new_capacity) / 2;
+#ifdef USE_DATA_CANARY
+    const canary_type temp_canary = CANARY_VALUE;
+    void* old_data = (char*) stk->data - sizeof(temp_canary);
+    size_t new_data_size = new_capacity * stk->elem_sz + 2 * sizeof(temp_canary);
+#else
+    void* old_data = stk->data;
+    size_t new_data_size = new_capacity * stk->elem_sz;
+#endif
+
+    void* new_data = realloc(old_data, new_data_size);
+    if (!new_data && new_capacity > stk->capacity + 1) {
+        new_capacity = stk->capacity + 1;
+
+#ifdef USE_DATA_CANARY
+        new_data_size = new_capacity * stk->elem_sz + 2 * sizeof(temp_canary);
+#else
+        new_data_size = new_capacity * stk->elem_sz;
+#endif
+
+        new_data = realloc(old_data, new_data_size);
     }
     if (!new_data) {
         stk->error = STACK_ALLOCATION_ERROR;
-        stack_update_canary(stk);
+        STACK_REHASH_METADATA(stk);
         return;
     }
     stk->capacity = new_capacity;
+
+#ifdef USE_DATA_CANARY
+    memcpy(new_data, &temp_canary, sizeof(temp_canary));
+    memcpy((char*) new_data + new_data_size - sizeof(temp_canary), &temp_canary, sizeof(temp_canary));
+    stk->data = (char*) new_data + sizeof(temp_canary);
+#else
     stk->data = new_data;
-    stack_update_canary(stk);
+#endif
+
+    WRITE_POISON(stk, stk->size, stk->capacity - stk->size);
+
+    STACK_REHASH(stk);
 }
 
 size_t stack_recomended_capacity(Stack* stk) {
     assert(stk);
 
-    stack_verify(stk);
+    STACK_VERIFY(stk);
 
     assert(stk->capacity >= STACK_DEFAULT_CAPACITY);
 
@@ -148,7 +125,7 @@ size_t stack_recomended_capacity(Stack* stk) {
 void stack_adjust(Stack* stk) {
     assert(stk);
 
-    stack_verify(stk);
+    STACK_VERIFY(stk);
 
     size_t recomended_capacity = stack_recomended_capacity(stk);
     if (stk->capacity != recomended_capacity) {
@@ -166,13 +143,17 @@ Stack* stack_allocate(size_t stk_elem_sz) {
     stk->error = STACK_OK;
     stk->elem_sz = stk_elem_sz;
     stk->size = 0;
-    stk->capacity = STACK_DEFAULT_CAPACITY;
-    stk->data = calloc(stk->capacity, stk->elem_sz);
-    if (!stk->data) {
+    stk->capacity = 0;
+    stack_resize(stk, STACK_DEFAULT_CAPACITY);
+    if (stk->error != STACK_OK) {
         free(stk);
         return NULL;
     }
-    stack_update_canary(stk);
+#ifdef USE_CANARY
+    stk->front_canary = CANARY_VALUE;
+    stk->back_canary = CANARY_VALUE;
+#endif
+    STACK_REHASH(stk);
     return stk;
 }
 
@@ -180,7 +161,7 @@ void const* stack_push(Stack* stk, void const* elem_p) {
     assert(stk);
     assert(elem_p);
 
-    stack_verify(stk);
+    STACK_VERIFY(stk);
 
     stack_adjust(stk);
     if (stk->error == STACK_ALLOCATION_ERROR) {
@@ -190,7 +171,7 @@ void const* stack_push(Stack* stk, void const* elem_p) {
     assert(stk->size < stk->capacity);
 
     memcpy((char*) stk->data + ((stk->size)++ * stk->elem_sz), elem_p, stk->elem_sz);
-    stack_update_canary(stk);
+    STACK_REHASH(stk);
 
     return elem_p;
 }
@@ -199,7 +180,7 @@ void* stack_top(Stack* stk, void* elem_p) {
     assert(stk);
     assert(elem_p);
 
-    stack_verify(stk);
+    STACK_VERIFY(stk);
 
     if (!stk->size) {
         return NULL;
@@ -214,7 +195,7 @@ void* stack_pop(Stack* stk, void* elem_p) {
     assert(stk);
     assert(elem_p);
 
-    stack_verify(stk);
+    STACK_VERIFY(stk);
 
     if (!stack_top(stk, elem_p)) {
         return NULL;
@@ -223,8 +204,9 @@ void* stack_pop(Stack* stk, void* elem_p) {
     assert(stk->size);
 
     stk->size--;
-    stack_update_canary(stk);
+    WRITE_POISON(stk, stk->size, 1);
     stack_adjust(stk);
+    STACK_REHASH(stk);
 
     return elem_p;
 }
@@ -232,7 +214,7 @@ void* stack_pop(Stack* stk, void* elem_p) {
 size_t stack_size(Stack* stk) {
     assert(stk);
 
-    stack_verify(stk);
+    STACK_VERIFY(stk);
 
     return stk->size;
 }
@@ -240,7 +222,7 @@ size_t stack_size(Stack* stk) {
 bool stack_empty(Stack* stk) {
     assert(stk);
 
-    stack_verify(stk);
+    STACK_VERIFY(stk);
 
     return !stk->size;
 }
@@ -255,20 +237,7 @@ void stack_free(Stack* stk) {
 STACK_ERROR stack_get_error(Stack* stk) {
     assert(stk);
 
-    stack_verify(stk);
+    STACK_VERIFY(stk);
 
     return stk->error;
-}
-
-char const* stack_error_string(STACK_ERROR error) {
-    switch (error) {
-        case STACK_OK:
-            return "No error";
-        case STACK_ALLOCATION_ERROR:
-            return "Internal memory allocation error";
-        case STACK_CORRUPTION_ERROR:
-            return "Stack memory has been corrupted";
-        default:
-            return "Unknow error";
-    }
 }
