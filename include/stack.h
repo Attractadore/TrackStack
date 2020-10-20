@@ -6,6 +6,7 @@
 typedef enum stack_error_e {
     STACK_OK,
     STACK_ALLOCATION_ERROR,
+    STACK_OPERATION_ERROR,
     
 #ifdef USE_CANARY
     STACK_METADATA_CANARY_OVERWRITE_ERROR,
@@ -40,9 +41,9 @@ void* stack_pop(Stack* stk, void* elem_p);
 
 void* stack_top(Stack* stk, void* elem_p);
 
-size_t stack_size(Stack* stack);
+size_t stack_size(Stack* stk);
 
-bool stack_empty(Stack* stack);
+bool stack_empty(Stack* stk);
 
 void stack_free(Stack* stk);
 

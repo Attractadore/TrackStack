@@ -14,7 +14,7 @@
 
 #include <stddef.h>
 
-#if defined (USE_CANARY) || defined(USE_DATA_CANARY)
+#if defined(USE_CANARY) || defined(USE_DATA_CANARY)
 typedef unsigned long long canary_type;
 #define CANARY_VALUE 0xF072E3546BAD189Cull
 #endif
@@ -23,6 +23,8 @@ typedef unsigned long long canary_type;
 typedef unsigned long long hash_type;
 #define HASH_INITIAL_VALUE 0x600D4A54ull
 #endif
+
+enum { STACK_DEFAULT_CAPACITY = 10 };
 
 struct stack_t {
 #ifdef USE_CANARY
