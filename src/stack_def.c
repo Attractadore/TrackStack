@@ -1,10 +1,11 @@
 #pragma once
 
-#define USE_CANARY
-#define USE_HASH_FULL
-#define USE_LOG
-#define USE_POISON
-#define USE_DATA_CANARY
+//#define USE_CANARY
+//#define USE_DATA_CANARY
+//#define USE_HASH_FAST
+//#define USE_HASH_FULL
+//#define USE_POISON
+//#define USE_LOG
 
 #if defined(USE_HASH_FAST) || defined(USE_HASH_FULL)
 #define USE_HASH
@@ -26,6 +27,7 @@ typedef unsigned long long hash_type;
 
 enum { STACK_DEFAULT_CAPACITY = 10 };
 
+static size_t stack_global_count = 0;
 struct stack_t {
 #ifdef USE_CANARY
     canary_type front_canary;
@@ -35,6 +37,7 @@ struct stack_t {
     size_t elem_sz;
     size_t size;
     size_t capacity;
+    size_t min_capacity;
     STACK_ERROR error;
 
 #ifdef USE_HASH

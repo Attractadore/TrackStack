@@ -5,36 +5,28 @@
 
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdio.h>
 
 typedef enum stack_error_e {
     STACK_OK,
     STACK_ALLOCATION_ERROR,
     STACK_OPERATION_ERROR,
-    
-#ifdef USE_CANARY
     STACK_METADATA_CANARY_OVERWRITE_ERROR,
-#endif
-
-#ifdef USE_HASH
     STACK_METADATA_HASH_ERROR,
-#endif
-
-#ifdef USE_DATA_CANARY
     STACK_DATA_CANARY_OVERWRITE_ERROR,
-#endif
-
-#ifdef USE_HASH_FULL
     STACK_DATA_HASH_ERROR,
-#endif
-
-#ifdef USE_POISON
     STACK_POISON_OVERWRITE_ERROR,
-#endif
-
     STACK_CORRUPTION_ERROR,
 } STACK_ERROR;
 
 typedef struct stack_t Stack;
+
+/**
+ * \brief Get list of protection features that this implementation was compiled with
+ *
+ * \return String describing protection features that this implementation was compiled with
+ */
+char const* get_stack_compilation_options();
 
 /**
  * \brief Allocate a new Stack
@@ -92,6 +84,15 @@ void* stack_top(Stack* stk, void* elem_p);
 size_t stack_size(Stack* stk);
 
 /**
+ * \brief Get the number of elements in a Stack that memory is currently reserved for 
+ *
+ * \param[in] stk The Stack whose capacity to query
+ *
+ * \return The Stack's capacity or 0 if an error occured.
+ */
+size_t stack_capacity(Stack* stk);
+
+/**
  * \brief Check if a Stack has no elements in it
  *
  * \param[in] stk The Stack to check
@@ -99,6 +100,27 @@ size_t stack_size(Stack* stk);
  * \return false if this Stack's size is greater than 0, true is this Stack is empty or an error occured
  */
 bool stack_empty(Stack* stk);
+
+/**
+ * \brief Set a Stack's internal minimum capacity
+ *
+ * \param[in] stk The Stack whose minimum capacity to set
+ * \param[in] capacity The new minimum capacity
+ *
+ * \return The Stack's new minimum capacity, 0 if an error occured
+ *
+ * \remark The Stack's minimum capacity will never be less than an 
+ *         implementation defined minimum
+ */
+size_t stack_reserve(Stack* stk, size_t capacity);
+
+/**
+ * \brief Dump all of a Stack's contents into a file in human-readable form
+ *
+ * \param[in] stk The Stack whose contents to dump
+ * \param[in] dump_file The file to dump into
+ */
+void stack_dump(Stack* stk, FILE* dump_file);
 
 /** 
  * \brief Free a Stack allocated by #allocate_stack
