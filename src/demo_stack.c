@@ -1,5 +1,6 @@
 #include "stack.h"
 
+#include <assert.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -55,6 +56,8 @@ void print_help() {
 }
 
 int get_command_id(char const* command) {
+    assert(command);
+
     for (size_t i = 0; i < ARR_LENGTH(commands); i++) {
         if (strcmp(command, commands[i]) == 0) {
             return i;
@@ -76,6 +79,9 @@ size_t get_command_buffer_size() {
 }
 
 size_t read_command(char const* line, char* command, size_t command_size) {
+    assert(line);
+    assert(command);
+
     memcpy(command, line, command_size);
     command[command_size - 1] = '\0';
     char* p = strchr(command, ' ');
@@ -86,6 +92,11 @@ size_t read_command(char const* line, char* command, size_t command_size) {
 }
 
 void handle_input(char const* line, char const* command, Stack* stk, bool* bExit_p) {
+    assert(line);
+    assert(command);
+    assert(stk);
+    assert(bExit_p);
+
     int command_id = get_command_id(command);
     switch (command_id) {
         case 0:  // help
