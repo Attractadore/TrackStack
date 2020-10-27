@@ -4,7 +4,7 @@
 #include <stdlib.h>
 
 enum {
-    INS_DEL_STEPS = 5000,
+    INS_DEL_STEPS = 1000,
     INS_AMOUNT = 20,
     DEL_AMOUNT = 10,
     DEL_STEPS = INS_DEL_STEPS + 5,
@@ -64,24 +64,21 @@ void test_stack() {
     Stack* stk = stack_allocate(sizeof(int));
     assert(stk);
 
+    printf("Start stack testing\n");
+
     size_t counter = 0;
     for (size_t i = 0; i < INS_DEL_STEPS; i++) {
         pop_test(stk, &counter);
         push_test(stk, &counter);
-        if ((i + 1) % 1000 == 0) {
-            printf("%zu Pop-push iterations\n", i);
-        }
     }
-    stack_dump(stk, stdout);
+
     for (size_t i = 0; i < DEL_STEPS; i++) {
         pop_test(stk, &counter);
-        if ((i + 1) % 1000 == 0) {
-            printf("%zu Pop iterations\n", i);
-        }
     }
-    stack_dump(stk, stdout);
 
     stack_free(stk);
+
+    printf("Tests passed\n");
 }
 
 int main() {
