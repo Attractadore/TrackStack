@@ -169,7 +169,7 @@ void stack_adjust(Stack* stk) {
     }
 }
 
-void open_stack_log() {
+void initialize_stack_log() {
     if (stack_global_log) {
         return;
     }
@@ -179,7 +179,7 @@ void open_stack_log() {
     }
 }
 
-void close_stack_log() {
+void finalize_stack_log() {
     if (!stack_global_count && stack_global_log) {
         fclose(stack_global_log);
     }
@@ -192,7 +192,7 @@ Stack* stack_allocate(size_t stk_elem_sz) {
     if (!stk) {
         return NULL;
     }
-    open_stack_log();
+    initialize_stack_log();
     STACK_LOG(stk, "Start new Stack allocation; there are %zu allocated Stacks", stack_global_count);
     stack_global_count++;
 #ifdef USE_CANARY
@@ -228,7 +228,7 @@ void stack_free(Stack* stk) {
 
         stack_global_count--;
         STACK_LOG(stk, "Freed Stack; there are %zu allocated Stacks", stack_global_count);
-        close_stack_log();
+        finalize_stack_log();
     }
 }
 
