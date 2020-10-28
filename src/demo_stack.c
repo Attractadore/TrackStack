@@ -1,4 +1,6 @@
-#include "stack.h"
+
+#define STACK_ELEM_TYPE int
+#include "stack_generic.h"
 
 #include <assert.h>
 #include <stdio.h>
@@ -91,7 +93,7 @@ size_t read_command(char const* line, char* command, size_t command_size) {
     return strlen(command);
 }
 
-void handle_input(char const* line, char const* command, Stack* stk, bool* bExit_p) {
+void handle_input(char const* line, char const* command, Stack_int* stk, bool* bExit_p) {
     assert(line);
     assert(command);
     assert(stk);
@@ -112,42 +114,44 @@ void handle_input(char const* line, char const* command, Stack* stk, bool* bExit
                 printf("Sorry, %s takes an int as an argument\n", command);
                 break;
             }
-            if (stack_push(stk, &v)) {
-                printf("Pushed %d to stack\n", v);
-            } else {
+            StackPush_int(stk, v);
+            if (StackGetError_int(stk) != STACK_OK) {
                 printf("Failed to push %d to stack\n", v);
+            }
+            else {
+                printf("Pushed %d to stack\n", v);
             }
         } break;
         case 3:  // pop
         {
-            int v = 0;
-            if (stack_pop(stk, &v)) {
-                printf("Popped %d from stack\n", v);
-            } else {
+            int v = StackPop_int(stk);
+            if (StackGetError_int(stk) != STACK_OK) {
                 printf("Failed to pop from stack\n");
+            } else {
+                printf("Popped %d from stack\n", v);
             }
         } break;
         case 4:  // top
         {
-            int v = 0;
-            if (stack_top(stk, &v)) {
-                printf("Stack top is %d\n", v);
-            } else {
+            int v = StackTop_int(stk);
+            if (StackGetError_int(stk) != STACK_OK) {
                 printf("Failed to peek at stack's top\n");
+            } else {
+                printf("Stack top is %d\n", v);
             }
         } break;
         case 5:  // size
-            printf("Stack size is %zu\n", stack_size(stk));
+            printf("Stack size is %zu\n", StackSize_int(stk));
             break;
         case 6:  // empty
-            if (stack_empty(stk)) {
+            if (StackEmpty_int(stk)) {
                 printf("Stack is empty\n");
             } else {
                 printf("Stack is not empty\n");
             }
             break;
         case 7:  // capacity
-            printf("Stack capacity is %zu\n", stack_capacity(stk));
+            printf("Stack capacity is %zu\n", StackCapacity_int(stk));
             break;
         case 8:  // reserve
         {
@@ -156,17 +160,17 @@ void handle_input(char const* line, char const* command, Stack* stk, bool* bExit
                 printf("Sorry, %s takes size_t as an argument\n", command);
                 break;
             }
-            if ((amount = stack_reserve(stk, amount))) {
+            if ((amount = StackReserve_int(stk, amount))) {
                 printf("Reserved capacity for %zu elements\n", amount);
             } else {
                 printf("Failed to reserve capacity for %zu elements\n", amount);
             }
         } break;
         case 9:  // dump
-            stack_dump(stk, stdout);
+            StackDump_int(stk, stdout);
             break;
         case 10:  // error
-            printf("%s\n", stack_error_string(stack_get_error(stk)));
+            printf("%s\n", StackErrorString_int(StackGetError_int(stk)));
             break;
         default:
             printf("Sorry, unrecognised command\n");
@@ -174,8 +178,8 @@ void handle_input(char const* line, char const* command, Stack* stk, bool* bExit
 }
 
 int main() {
-    Stack* int_stack = stack_allocate(sizeof(int));
-    if (!int_stack) {
+    Stack_int* stk = StackAllocate_int();
+    if (!stk) {
         return 1;
     }
     printf("%s\n", get_stack_compilation_options());
@@ -193,8 +197,8 @@ int main() {
             *p = '\0';
         }
         size_t command_length = read_command(line, command, command_size);
-        handle_input(line + command_length, command, int_stack, &bExit);
+        handle_input(line + command_length, command, stk, &bExit);
     }
-    stack_free(int_stack);
+    StackFree_int(stk);
     return 0;
 }
