@@ -1,4 +1,5 @@
-#include "stack.h"
+#define STACK_ELEM_TYPE int
+#include "stack_generic.h"
 
 #include <assert.h>
 #include <stdlib.h>
@@ -10,58 +11,46 @@ enum {
     DEL_STEPS = INS_DEL_STEPS + 5,
 };
 
-void push_test(Stack* stk, size_t* const counter) {
+void push_test(Stack_int* stk, size_t* const counter) {
     assert(stk);
     assert(counter);
 
     for (size_t i = 0; i < INS_AMOUNT; i++) {
         int push_val = rand();
-        void const* push_ret = stack_push(stk, &push_val);
-        assert(push_ret == &push_val);
+        StackPush_int(stk, push_val);
         (*counter)++;
-        assert(stack_size(stk) == *counter);
+        assert(StackSize_int(stk) == *counter);
 
-        int top_val = 0;
-        void const* top_ret = stack_top(stk, &top_val);
-        assert(top_ret == &top_val);
-
+        int top_val = StackTop_int(stk);
         assert(push_val == top_val);
     }
 }
 
-void pop_test(Stack* stk, size_t* const counter) {
+void pop_test(Stack_int* stk, size_t* const counter) {
     assert(stk);
     assert(counter);
 
     for (size_t i = 0; i < DEL_AMOUNT; i++) {
-        int top_val = 0;
-        void const* top_ret = stack_top(stk, &top_val);
-        if (*counter) {
-            assert(top_ret == &top_val);
-        } else {
-            assert(top_ret == NULL);
-            assert(stack_get_error(stk) == STACK_OPERATION_ERROR);
+        int top_val = StackTop_int(stk);
+        if (!*counter) {
+            assert(StackGetError_int(stk) == STACK_OPERATION_ERROR);
         }
 
-        int pop_val = 0;
-        void const* pop_ret = stack_pop(stk, &pop_val);
-        if (*counter) {
-            assert(pop_ret == &pop_val);
-        } else {
-            assert(pop_ret == NULL);
-            assert(stack_get_error(stk) == STACK_OPERATION_ERROR);
+        int pop_val = StackPop_int(stk);
+        if (!*counter) {
+            assert(StackGetError_int(stk) == STACK_OPERATION_ERROR);
         }
 
         assert(pop_val == top_val);
         if (*counter) {
             (*counter)--;
-            assert(stack_size(stk) == *counter);
+            assert(StackSize_int(stk) == *counter);
         }
     }
 }
 
 void test_stack() {
-    Stack* stk = stack_allocate(sizeof(int));
+    Stack_int* stk = StackAllocate_int();
     assert(stk);
 
     printf("Start stack testing\n");
@@ -76,7 +65,7 @@ void test_stack() {
         pop_test(stk, &counter);
     }
 
-    stack_free(stk);
+    StackFree_int(stk);
 
     printf("Tests passed\n");
 }
