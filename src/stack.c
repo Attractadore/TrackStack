@@ -1,9 +1,9 @@
 #include "stack.h"
 
-#include <stdlib.h>
 #include <assert.h>
 #include <limits.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <time.h>
 
@@ -141,9 +141,9 @@ void stack_dump(Stack* stk, FILE* dump_file) {
     fprintf(dump_file, "%s"
                        "Dump for Stack at %p\n"
                        "Stack status is: %d: %s\n",
-                       ctime(&tm),
-                       (void const*) stk,
-                       stk->error, stack_error_string(stk->error));
+            ctime(&tm),
+            (void const*) stk,
+            stk->error, stack_error_string(stk->error));
 
 #if defined(USE_CANARY) || defined(USE_DATA_CANARY)
     const int canary_field_width = sizeof(canary_type) * CHAR_BIT / 4;
@@ -155,27 +155,27 @@ void stack_dump(Stack* stk, FILE* dump_file) {
 #ifdef USE_HASH
     fprintf(dump_file, "Stack stored metadata hash is: %.*llX\n"
                        "Stack actual metadata hash is: %.*llX\n",
-                       hash_field_width, stk->metadata_hash,
-                       hash_field_width, stack_metadata_hash(stk));
+            hash_field_width, stk->metadata_hash,
+            hash_field_width, stack_metadata_hash(stk));
 #endif
 #ifdef USE_CANARY
     fprintf(dump_file, "Stack default canary value is: %.*llX\n"
                        "Stack front canary is:         %.*llX\n"
                        "Stack back canary is:          %.*llX\n",
-                       canary_field_width, CANARY_VALUE,
-                       canary_field_width, stk->front_canary,
-                       canary_field_width, stk->back_canary);
+            canary_field_width, CANARY_VALUE,
+            canary_field_width, stk->front_canary,
+            canary_field_width, stk->back_canary);
 #endif
     fprintf(dump_file, "Stack element size is     %zu\n"
                        "Stack minimum capacity is %zu\n"
                        "Stack size is             %zu\n"
                        "Stack capacity is         %zu\n"
                        "Stack data is at: %p\n",
-                       stk->elem_sz,
-                       stk->min_capacity,
-                       stk->size,
-                       stk->capacity,
-                       stk->data);
+            stk->elem_sz,
+            stk->min_capacity,
+            stk->size,
+            stk->capacity,
+            stk->data);
     if (!stk->data) {
         return;
     }
@@ -183,16 +183,16 @@ void stack_dump(Stack* stk, FILE* dump_file) {
 #ifdef USE_HASH_FULL
     fprintf(dump_file, "Stack stored data hash is:          %.*llX\n"
                        "Stack actual data hash is:          %.*llX\n",
-                       hash_field_width, stk->data_hash,
-                       hash_field_width, stack_data_hash(stk));
+            hash_field_width, stk->data_hash,
+            hash_field_width, stack_data_hash(stk));
 #endif
 #ifdef USE_DATA_CANARY
     fprintf(dump_file, "Stack default data canary value is: %.*llX\n"
                        "Stack data front canary is:         %.*llX\n"
                        "Stack data back canary is:          %.*llX\n",
-                       canary_field_width, CANARY_VALUE,
-                       canary_field_width, *((canary_type const*) stk->data - 1),
-                       canary_field_width, *((canary_type const*) ((char const*) stk->data + stk->capacity * stk->elem_sz)));
+            canary_field_width, CANARY_VALUE,
+            canary_field_width, *((canary_type const*) stk->data - 1),
+            canary_field_width, *((canary_type const*) ((char const*) stk->data + stk->capacity * stk->elem_sz)));
 #endif
     fprintf(dump_file, "Stack data is:\n");
     char const* data = stk->data;

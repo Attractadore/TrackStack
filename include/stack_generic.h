@@ -6,9 +6,9 @@
 #error STACK_ELEM_TYPE not defined
 #endif
 
-#define CAT_HELPER(name1, name2) name1 ## _ ## name2
+#define CAT_HELPER(name1, name2) name1##_##name2
 #define CAT(name1, name2) CAT_HELPER(name1, name2)
-#define OVERLOAD(name) CAT(name, STACK_ELEM_TYPE) 
+#define OVERLOAD(name) CAT(name, STACK_ELEM_TYPE)
 
 struct CAT(OVERLOAD(stack), t);
 typedef struct CAT(OVERLOAD(stack), t) OVERLOAD(Stack);
@@ -76,22 +76,22 @@ static inline char const* STACK_ERROR_STRING(STACK_ERROR err) {
     return stack_error_string(err);
 }
 
-static inline void STACK_FREE (STACK_TYPE* stk) {
+static inline void STACK_FREE(STACK_TYPE* stk) {
     stack_free((Stack*) stk);
 }
 
-#undef STACK_ALLOLOCATE 
-#undef STACK_FREE 
-#undef STACK_PUSH 
-#undef STACK_POP 
-#undef STACK_TOP 
-#undef STACK_SIZE 
-#undef STACK_CAPACITY 
-#undef STACK_EMPTY 
-#undef STACK_RESERVER 
-#undef STACK_DUMP 
-#undef STACK_GET_ERROR 
-#undef STACK_ERROR_STRING 
+#undef STACK_ALLOLOCATE
+#undef STACK_FREE
+#undef STACK_PUSH
+#undef STACK_POP
+#undef STACK_TOP
+#undef STACK_SIZE
+#undef STACK_CAPACITY
+#undef STACK_EMPTY
+#undef STACK_RESERVER
+#undef STACK_DUMP
+#undef STACK_GET_ERROR
+#undef STACK_ERROR_STRING
 
 #undef STACK_TYPE
 #undef STACK_ELEM_TYPE

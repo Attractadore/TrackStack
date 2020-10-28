@@ -117,8 +117,7 @@ void handle_input(char const* line, char const* command, Stack_int* stk, bool* b
             StackPush_int(stk, v);
             if (StackGetError_int(stk) != STACK_OK) {
                 printf("Failed to push %d to stack\n", v);
-            }
-            else {
+            } else {
                 printf("Pushed %d to stack\n", v);
             }
         } break;
