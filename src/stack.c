@@ -308,12 +308,14 @@ void stack_verify(Stack* stk) {
 #endif
 
 #ifdef USE_DATA_CANARY
-    const canary_type front_canary = *((canary_type const*) stk->data - 1);
-    char const* back_p = (char const*) stk->data + stk->capacity * stk->elem_sz;
-    const canary_type back_canary = *((canary_type const*) back_p);
-    if (front_canary != CANARY_VALUE || back_canary != CANARY_VALUE) {
-        stk->error = STACK_DATA_CANARY_OVERWRITE_ERROR;
-        goto error;
+    if (stk->data) {
+        const canary_type front_canary = *((canary_type const*) stk->data - 1);
+        char const* back_p = (char const*) stk->data + stk->capacity * stk->elem_sz;
+        const canary_type back_canary = *((canary_type const*) back_p);
+        if (front_canary != CANARY_VALUE || back_canary != CANARY_VALUE) {
+            stk->error = STACK_DATA_CANARY_OVERWRITE_ERROR;
+            goto error;
+        }
     }
 #endif
 
