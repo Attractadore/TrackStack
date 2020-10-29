@@ -320,11 +320,13 @@ void stack_verify(Stack* stk) {
 #endif
 
 #ifdef USE_POISON
-    size_t start_i = stk->size * stk->elem_sz;
-    size_t num = (stk->capacity - stk->size) * stk->elem_sz;
-    if (!verify_poison((char const*) stk->data + start_i, num)) {
-        stk->error = STACK_POISON_OVERWRITE_ERROR;
-        goto error;
+    if (stk->data) {
+        size_t start_i = stk->size * stk->elem_sz;
+        size_t num = (stk->capacity - stk->size) * stk->elem_sz;
+        if (!verify_poison((char const*) stk->data + start_i, num)) {
+            stk->error = STACK_POISON_OVERWRITE_ERROR;
+            goto error;
+        }
     }
 #endif
 
