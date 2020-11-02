@@ -1,5 +1,3 @@
-#pragma once
-
 #include "stack.h"
 
 #ifndef STACK_ELEM_TYPE
