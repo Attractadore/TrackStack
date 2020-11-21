@@ -644,12 +644,14 @@ void const* stack_push(Stack* stk, void const* elem_p) {
 
     STACK_REHASH(stk);
 
+#ifdef USE_LOG
     char elem_str[elem_str_size(stk->elem_sz) + 1];
     if (elem_to_str(elem_p, elem_str, stk->elem_sz, sizeof(elem_str))) {
         STACK_LOG(stk, "Pushed element %s", elem_str);
     } else {
         STACK_LOG(stk, "Pushed unknown element", elem_str);
     }
+#endif
 
     return elem_p;
 }
@@ -675,12 +677,14 @@ void* stack_top(Stack* stk, void* elem_p) {
 
     STACK_REHASH_METADATA(stk);
 
+#ifdef USE_LOG
     char elem_str[elem_str_size(stk->elem_sz) + 1];
     if (elem_to_str(elem_p, elem_str, stk->elem_sz, sizeof(elem_str))) {
         STACK_LOG(stk, "Toped element %s", elem_str);
     } else {
         STACK_LOG(stk, "Toped unknown element", elem_str);
     }
+#endif
 
     return elem_p;
 }
@@ -709,12 +713,14 @@ void* stack_pop(Stack* stk, void* elem_p) {
     stack_adjust(stk);
     STACK_REHASH(stk);
 
+#ifdef USE_LOG
     char elem_str[elem_str_size(stk->elem_sz) + 1];
     if (elem_to_str(elem_p, elem_str, stk->elem_sz, sizeof(elem_str))) {
         STACK_LOG(stk, "Poped element %s", elem_str);
     } else {
         STACK_LOG(stk, "Poped unknown element", elem_str);
     }
+#endif
 
     return elem_p;
 }
