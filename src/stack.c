@@ -340,12 +340,21 @@ error:
         stack_dump(stk, stack_global_log);
     }
 }
+#ifndef NDEBUG
 #define STACK_VERIFY(stk) stack_verify(stk)
 #define STACK_VERIFY_RETURN(stk, val)           \
     STACK_VERIFY(stk);                          \
     if (!stack_error_recoverable(stk->error)) { \
         return val;                             \
     }
+#else
+#define STACK_VERIFY(stk) \
+    do {                  \
+    } while (0)
+#define STACK_VERIFY_RETURN(stk, val) \
+    do {                              \
+    } while (0)
+#endif
 
 char const* stack_error_string(STACK_ERROR error) {
     switch (error) {
